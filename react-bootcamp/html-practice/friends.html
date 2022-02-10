@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>React Bootcamp</title>
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script>
+        window.API = {
+            fetchFriends() {
+                return new Promise((res, rej) => {
+                    var friends = ["Liz", "Uriel", "Meli", "Cesar"];
+
+                    setTimeout(() => res(friends), 2000);
+                });
+            }
+        }
+    </script>
+
+    <script type="text/babel">
+        class Loading extends React.Component {
+            constructor(props) {
+                super(props);
+
+                this.state = {
+                    text: 'Loading'
+                };
+            }
+
+            componentDidMount() {
+                var stopper = this.state.text + "...";
+
+                this.interval = window.setInterval(() => {
+                    if (this.state.text === stopper) {
+                        this.setState({ text: "Loading" });
+                    }
+                    else {
+                        this.setState((currentState) => ({
+                            text: currentState.text + "."
+                        }));
+                    }
+                }, 300);
+            }
+
+            componentWillUnmount() {
+                window.clearInterval(this.interval);
+            }
+
+            render() {
+                return <p>{this.state.text}</p>;
+            }
+        }
+
+        class App extends React.Component {
+            constructor(props) {
+                super(props);
+
+                this.state = {
+                    friends: [],
+                    inactiveFriends: [],
+                    input: '',
+                    loading: true
+                };
+
+                this.handleActivateFriend = this.handleActivateFriend.bind(this);
+                this.handleDeactivateFriend = this.handleDeactivateFriend.bind(this);
+                this.handleRemoveFriend = this.handleRemoveFriend.bind(this);
+                this.handleClearFriends = this.handleClearFriends.bind(this);
+                this.handleAddFriend = this.handleAddFriend.bind(this);
+                this.updateInput = this.updateInput.bind(this);
+
+                console.log("constructor");
+            }
+
+            componentDidMount() {
+                console.log("componentDidMount");
+
+                API.fetchFriends()
+                    .then((friends) => {
+                        this.setState((currentState) => {
+                            return {
+                                friends,
+                                loading: false,
+                            };
+                        });
+                    });
+            }
+
+            componentDidUpdate() {
+                console.log("componentDidUpdate");
+            }
+
+            componentWillUnmount() {
+                console.log("componentWillUnmount");
+            }
+
+            handleAddFriend() {
+                this.setState((currentState) => {
+                    return {
+                        friends: currentState.friends.concat([currentState.input]),
+                        input: ''
+                    };
+                });
+            }
+
+            handleActivateFriend(name) {
+                this.setState((currentState) => {
+                    return {
+                        friends: currentState.friends.concat([name]),
+                        inactiveFriends: currentState.inactiveFriends.filter((friend) => friend !== name)
+                    };
+                });
+            }
+
+            handleDeactivateFriend(name) {
+                this.setState((currentState) => {
+                    return {
+                        friends: currentState.friends.filter((friend) => friend !== name),
+                        inactiveFriends: currentState.inactiveFriends.concat([name])
+                    };
+                });
+            }
+
+            handleRemoveFriend(name) {
+                this.setState((currentState) => {
+                    return {
+                        friends: currentState.friends.filter((friend) => friend !== name),
+                        inactiveFriends: currentState.inactiveFriends.filter((friend) => friend !== name)
+                    };
+                });
+            }
+
+            updateInput(event) {
+                var value = event.target.value;
+                this.setState(() => ({
+                    input: value
+                }));
+            }
+
+            handleClearFriends() {
+                this.setState((currentState) => {
+                    return {
+                        friends: [],
+                        inactiveFriends: []
+                    };
+                });
+            }
+
+            render() {
+                console.log("render");
+
+                if (this.state.loading) {
+                    return <Loading />;
+                }
+
+                return (
+                    <div>
+                        <input type="text"
+                            placeholder="New friend's name"
+                            value={this.state.input}
+                            onChange={this.updateInput} />
+                        <button onClick={this.handleAddFriend}>Add Friend</button>
+                        <h1>Active Friends</h1>
+                        <FriendsList
+                            list={this.state.friends}
+                            onRemoveFriend={this.handleRemoveFriend}
+                            onDeactivateFriend={this.handleDeactivateFriend} />
+                        <h1>Inactive Friends</h1>
+                        <InactiveFriendsList
+                            list={this.state.inactiveFriends}
+                            onRemoveFriend={this.handleRemoveFriend}
+                            onActivateFriend={this.handleActivateFriend} />
+                        <button onClick={this.handleClearFriends}>Clear All Friends</button>
+                    </div>
+                );
+            }
+        }
+
+        function FriendsList(props) {
+            return (
+                <ul>
+                    {props.list.map((name) => (
+                        <li key={name}>
+                            <span>{name}</span>
+                            <button onClick={() => props.onRemoveFriend(name)}>Remove</button>
+                            <button onClick={() => props.onDeactivateFriend(name)}>Deactivate Friend</button>
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+
+        function InactiveFriendsList(props) {
+            return (
+                <ul>
+                    {props.list.map((name) => (
+                        <li key={name}>
+                            <span>{name}</span>
+                            <button onClick={() => props.onRemoveFriend(name)}>Remove</button>
+                            <button onClick={() => props.onActivateFriend(name)}>Activate Friend</button>
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+
+        ReactDOM.render(
+            <App />,
+            document.getElementById("app")
+        );
+    </script>
+</body>
+
+</html>
